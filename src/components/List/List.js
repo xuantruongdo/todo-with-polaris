@@ -4,11 +4,11 @@ import {
   EmptyState,
   Page,
   ResourceList,
+  TextField,
 } from "@shopify/polaris";
 import "./list.css";
 import { useCallback, useState } from "react";
 import Todo from "../Todo/Todo";
-import ModalCreate from "../Modal/Modal";
 import {
   callAdd,
   callDelete,
@@ -16,14 +16,18 @@ import {
   callMultipleDelete,
   callMultipleUpdate,
   callUpdate,
-} from "../api/api";
+} from "../../api/api";
 import useFetchData from "../../hooks/useFetchApi";
 import useModal from "../../hooks/useModal";
 
 const List = () => {
   const [checked, setChecked] = useState(false);
   const [error, setError] = useState(false);
-  const { isModalOpen, openModal, closeModal } = useModal(false);
+
+  const [value, setValue] = useState("");
+
+  const handleChangeInput = useCallback((newValue) => setValue(newValue), []);
+
   const handleChange = useCallback((newChecked) => setChecked(newChecked), []);
 
   const [selectedItems, setSelectedItems] = useState([]);
@@ -52,13 +56,14 @@ const List = () => {
       </EmptyState>
     ) : undefined;
 
-  const handleAdd = async (value) => {
+  const handleAdd = async () => {
     if (value.trim() === "") {
       setError(true);
       return;
     }
     const res = await callAdd({ text: value });
     if (res && res.data) {
+      setValue("");
       setError(false);
       closeModal();
       setTimeout(() => {
@@ -115,6 +120,19 @@ const List = () => {
     },
   ];
 
+  const { modal, closeModal, openModal } = useModal({
+    title: "Create a todo",
+    confirmAction: handleAdd,
+    content: (
+      <TextField
+        error={error ? "Please enter a valid value" : undefined}
+        value={value}
+        onChange={handleChangeInput}
+        autoComplete="off"
+      />
+    ),
+  });
+
   return (
     <Page
       title="Todos"
@@ -124,47 +142,34 @@ const List = () => {
         onAction: openModal,
       }}
     >
-      <div>
-        <div className="select-wrapper">
-          <p>Showing {todos.length} todos</p>
-          <div className="select-div">
-            <Checkbox
-              label="Select"
-              checked={checked}
-              onChange={handleChange}
-            />
-          </div>
+      <div className="select-wrapper">
+        <p>Showing {todos.length} todos</p>
+        <div className="select-div">
+          <Checkbox label="Select" checked={checked} onChange={handleChange} />
         </div>
-        <Card>
-          <ResourceList
-            resourceName={resourceName}
-            emptyState={emptyStateMarkup}
-            promotedBulkActions={promotedBulkActions}
-            items={todos}
-            renderItem={(todo) => (
-              <Todo
-                key={todo.id}
-                item={todo}
-                handleComplete={handleComplete}
-                handleDelete={handleDelete}
-              />
-            )}
-            selectedItems={selectedItems}
-            onSelectionChange={setSelectedItems}
-            selectable
-          />
-
-          {loading ? <p>Loading...</p> : ""}
-        </Card>
-
-        <ModalCreate
-          handleAdd={handleAdd}
-          error={error}
-          isModalOpen={isModalOpen}
-          openModal={openModal}
-          closeModal={closeModal}
-        />
       </div>
+      <Card>
+        <ResourceList
+          resourceName={resourceName}
+          emptyState={emptyStateMarkup}
+          promotedBulkActions={promotedBulkActions}
+          items={todos}
+          renderItem={(todo) => (
+            <Todo
+              key={todo.id}
+              item={todo}
+              handleComplete={handleComplete}
+              handleDelete={handleDelete}
+            />
+          )}
+          selectedItems={selectedItems}
+          onSelectionChange={setSelectedItems}
+          selectable
+        />
+
+        {loading ? <p>Loading...</p> : ""}
+      </Card>
+      {modal}
     </Page>
   );
 };
