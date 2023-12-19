@@ -1,0 +1,11 @@
+.select-wrapper{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+}
+.select-div{
+    border: solid 1px #ccc;
+    padding: 3px 15px;
+    border-radius: 5px;
+}
